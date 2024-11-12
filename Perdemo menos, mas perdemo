@@ -1,0 +1,193 @@
+#Question 1:
+
+def find_judge(n, trust):
+    if n == 1:
+        return 1 #Se só há uma pessoa, ela é automaticamnte juiz.
+    
+    confia = [0]*(n+1)
+    confiado = [0]*(n+1)
+    for ai, bi in trust:
+        confia[ai] += 1
+        confiado[bi] += 1
+
+    for i in range(1, n + 1):
+        if confia[i] == 0 and confiado[i] == n - 1:
+            return i
+    return -1
+
+
+
+''''
+
+Exemplo, caso queira:
+n = 4
+trust = [[ 1 , 3 ], [ 2 , 3 ], [ 3 , 1 ], [3, 4], [1, 4], [2, 4]]
+print(find_judge(n, trust)) 
+
+'''
+
+#Question 2:
+
+#Item a:
+
+import math
+
+def euclidean_distance(p1, p2):
+    return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
+
+# Função para encontrar o representante de um conjunto no Union-Find
+def find(parent, i):
+    if parent[i] == i:
+        return i
+    else:
+        parent[i] = find(parent, parent[i])  # Path compression
+        return parent[i]
+
+# Função para unir dois conjuntos no Union-Find
+def union(parent, rank, x, y):
+    rootX = find(parent, x)
+    rootY = find(parent, y)
+    
+    if rootX != rootY:
+        if rank[rootX] > rank[rootY]:
+            parent[rootY] = rootX
+        elif rank[rootX] < rank[rootY]:
+            parent[rootX] = rootY
+        else:
+            parent[rootY] = rootX
+            rank[rootX] += 1
+
+# Algoritmo de Kruskal para encontrar a Árvore Geradora Mínima (MST)
+def kruskal(vertices):
+    n = len(vertices)
+    edges = []
+    
+    # Calculando todas as arestas com as respectivas distâncias
+    for i in range(n):
+        for j in range(i + 1, n):
+            distance = euclidean_distance(vertices[i], vertices[j])
+            edges.append((distance, i, j))  # (peso, vértice1, vértice2)
+    
+    # Ordenando as arestas pela distância
+    edges.sort()
+    
+    # Inicializando a estrutura Union-Find
+    parent = list(range(n))
+    rank = [0] * n
+    
+    mst = []  # Lista de arestas que formarão a MST
+    mst_cost = 0  # Custo total da MST
+    
+    # Iterando sobre as arestas, e unindo os conjuntos disjuntos
+    for weight, u, v in edges:
+        root_u = find(parent, u)
+        root_v = find(parent, v)
+        
+        # Se u e v não estão no mesmo conjunto, unimos e adicionamos a aresta na MST
+        if root_u != root_v:
+            mst.append((u, v, weight))
+            mst_cost += weight
+            union(parent, rank, root_u, root_v)
+    
+    return mst_cost, mst
+
+''''
+
+Exemplo, caso queira:
+vertices = [(0, 0), (1, 2), (4, 3), (5, 1), (2, 5)]  # Vértices no plano (x, y)
+
+# Encontrando a Árvore Geradora Mínima (MST)
+mst_cost, mst = kruskal(vertices)
+
+print(f"Custo total da MST: {mst_cost}")
+print("Arestas da MST (vértices conectados e distâncias):")
+for u, v, weight in mst:
+    print(f"Vértice {u} - Vértice {v} com distância {weight:.2f}")
+'''
+
+#Item b:
+''''
+    A complexidade mínima de qualquer algoritmo que resolve o problema de Árvore Geradora Mínima (MST) é Ω(nlog n), pois, em um grafo com 
+n vértices, o algoritmo precisa, no mínimo, realizar operações que envolvem as distâncias entre os vértices. 
+No pior caso, ao selecionar as arestas de menor peso, um algoritmo eficiente como o de Prim (que utiliza uma fila de prioridade)
+ou Kruskal (que ordena as arestas) precisa manipular informações para cada vértice e aresta.
+    No caso de Prim, por exemplo, é necessário extrair o vértice de menor peso da fila de prioridade, o que tem complexidade 
+O(logn) por operação, e isso ocorre para cada um dos n vértices. Por isso,
+a complexidade mínima de um algoritmo para MST, independentemente do número de arestas, é Ω(nlog n), 
+já que é necessário, pelo menos, processar cada vértice em tempo logarítmico para garantir a formação da árvore geradora mínima.
+'''
+
+#Item c:
+''''
+O algoritmo acima não é tão conveniente para todo tipo de grafo, como os esparsos. Concluímos que o algoritmo não é
+ótimo para todo caso.
+'''
+
+#Question 3:
+
+import sympy as sp
+''''
+Vamos criar um polinômio interpolador de Lagrange. Dados n+1 pontos, encotramos um únimo polinômio de grau n que passa por esses n+1 pontos. Assim,
+podemos achar valores aproximados para quaisquer pontos em R². Abaixo, x representa a temperatura em graus celcius e y representa a altura.
+'''
+
+
+def lagrange_interpolation(points, y0=None, x0=None):
+    # Definir a variável simbólica x (representando a temperatura)
+    x = sp.symbols('x')
+    
+    # Extraindo as coordenadas x (temperaturas) e y (alturas) dos pontos fornecidos
+    x_points, y_points = zip(*points)
+    
+    # Inicializando o polinômio interpolador
+    L = 0
+    
+    # Calculando o polinômio de Lagrange
+    for i in range(len(points)):
+        xi = x_points[i]
+        yi = y_points[i]
+        
+        # Lagrange basis polynomial: l_i(x)
+        term = 1
+        for j in range(len(points)):
+            if i != j:
+                term *= (x - x_points[j]) / (xi - x_points[j])
+        
+        # Soma dos termos de Lagrange
+        L += yi * term
+    
+    # Simplificando o polinômio resultante
+    L_simplified = sp.simplify(L)
+    
+    # Caso 1: Calcular p(x0) (valor do polinômio em x0), onde x0 é a temperatura
+    if x0 is not None:
+        p_x0 = L_simplified.subs(x, x0)
+        return p_x0.evalf()  # Retorna o valor numérico para p(x0)
+    
+    # Caso 2: Encontrar x tal que f(x) = y0 (encontrar temperatura para a altura dada)
+    if y0 is not None:
+        # Resolvendo a equação L(x) = y0 (altura)
+        solutions = sp.solve(L_simplified - y0, x)
+        
+        # Filtrando soluções reais
+        real_solutions = [sol.evalf() for sol in solutions if sol.is_real]
+        
+        if not real_solutions:
+            return f"Não há soluções reais para f(x) = {y0}"
+        
+        # Retornando todas as soluções reais para a temperatura
+        return real_solutions
+
+# Exemplo de uso
+points = [(15, 0), (9, 200), (5, 400), (3, 600), (-2, 800), (-5, 1000), (-15, 1200)]  
+# Esses pontos representam (temperatura, altura), por exemplo: (temperatura, altura em metros)
+
+# Calcular p(x0) dado x0 (temperatura)
+x0 = 0  # temperatura de 4 graus Celsius
+result_x0 = lagrange_interpolation(points, x0=x0)
+print(f"A {x0} graus Celsius, a altura do avião é aproximadamente {result_x0} metros")
+
+# Encontrar a temperatura (x) tal que f(x) = y0 (altura)
+y0 = 700  # altura de 900 metros
+result_y0 = lagrange_interpolation(points, y0=y0)
+print(f"Com altura de {y0} metros, a temperatura do avião é aproximadamente {result_y0} graus Celsius")
