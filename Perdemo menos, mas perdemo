@@ -125,69 +125,42 @@ O algoritmo acima não é tão conveniente para todo tipo de grafo, como os espa
 
 #Question 3:
 
-import sympy as sp
+#Question 3:
+
+import copy
+
 ''''
-Vamos criar um polinômio interpolador de Lagrange. Dados n+1 pontos, encotramos um únimo polinômio de grau n que passa por esses n+1 pontos. Assim,
-podemos achar valores aproximados para quaisquer pontos em R². Abaixo, x representa a temperatura em graus celcius e y representa a altura.
+    Para n+1 pontos, temos um único polinômio de grau n que aproxima bem uma curva que passa pelos pontos. Esse 
+polinômio é o interpolador de lagrange. Usaremos ele.
+
 '''
 
+def lagrange(T_fT, alvo, invert=False):  
+    
+    # Carregaremos invert, que caso for True => que queremos a relação altura x grau
+    sum = 0
 
-def lagrange_interpolation(points, y0=None, x0=None):
-    # Definir a variável simbólica x (representando a temperatura)
-    x = sp.symbols('x')
-    
-    # Extraindo as coordenadas x (temperaturas) e y (alturas) dos pontos fornecidos
-    x_points, y_points = zip(*points)
-    
-    # Inicializando o polinômio interpolador
-    L = 0
-    
-    # Calculando o polinômio de Lagrange
-    for i in range(len(points)):
-        xi = x_points[i]
-        yi = y_points[i]
-        
-        # Lagrange basis polynomial: l_i(x)
-        term = 1
-        for j in range(len(points)):
-            if i != j:
-                term *= (x - x_points[j]) / (xi - x_points[j])
-        
-        # Soma dos termos de Lagrange
-        L += yi * term
-    
-    # Simplificando o polinômio resultante
-    L_simplified = sp.simplify(L)
-    
-    # Caso 1: Calcular p(x0) (valor do polinômio em x0), onde x0 é a temperatura
-    if x0 is not None:
-        p_x0 = L_simplified.subs(x, x0)
-        return p_x0.evalf()  # Retorna o valor numérico para p(x0)
-    
-    # Caso 2: Encontrar x tal que f(x) = y0 (encontrar temperatura para a altura dada)
-    if y0 is not None:
-        # Resolvendo a equação L(x) = y0 (altura)
-        solutions = sp.solve(L_simplified - y0, x)
-        
-        # Filtrando soluções reais
-        real_solutions = [sol.evalf() for sol in solutions if sol.is_real]
-        
-        if not real_solutions:
-            return f"Não há soluções reais para f(x) = {y0}"
-        
-        # Retornando todas as soluções reais para a temperatura
-        return real_solutions
+    T_fT = copy.deepcopy(T_fT)
+    if invert:
+        for T in T_fT:
+            T[0], T[1] = T[1], T[0]
 
-# Exemplo de uso
-points = [(15, 0), (9, 200), (5, 400), (3, 600), (-2, 800), (-5, 1000), (-15, 1200)]  
-# Esses pontos representam (temperatura, altura), por exemplo: (temperatura, altura em metros)
+    for T in T_fT:
+        a = 1
+        for T2 in T_fT:
+            if T != T2:
+                a *= (alvo - T2[0]) / (T[0] - T2[0])
 
-# Calcular p(x0) dado x0 (temperatura)
-x0 = 0  # temperatura de 4 graus Celsius
-result_x0 = lagrange_interpolation(points, x0=x0)
-print(f"A {x0} graus Celsius, a altura do avião é aproximadamente {result_x0} metros")
+        sum += a * T[1]
 
-# Encontrar a temperatura (x) tal que f(x) = y0 (altura)
-y0 = 700  # altura de 900 metros
-result_y0 = lagrange_interpolation(points, y0=y0)
-print(f"Com altura de {y0} metros, a temperatura do avião é aproximadamente {result_y0} graus Celsius")
+    return sum
+
+''''
+Use, caso queira:
+
+T_fT = ([15, 200], [9, 400], [5, 600], [3, 800], [-2, 1000], [-5, 1200], [-15, 1400])
+
+print(f'A altura do avião a 0 graus Celsius é: {lagrange(T_fT, 0)}')
+print(f'A temperatura do avião a 700 metros é: {lagrange(T_fT, 700, True)}')
+'''
+
